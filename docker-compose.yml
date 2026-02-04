@@ -1,0 +1,23 @@
+# Docker compose file for RisingEmbedded Yocto development environment
+services:
+  yocto:
+    build: .
+    image: yocto-builder:latest #
+    container_name: yocto-dev    
+    working_dir: /home/yocto/workspace
+    volumes:
+      - .:/home/yocto/workspace:cached           # Source code
+      - yocto-downloads:/home/yocto/downloads    # Downloads
+      - yocto-sstate:/home/yocto/sstate-cache    # Sstate cache
+      - yocto-build:/home/yocto/build            # 
+    tty: true
+    stdin_open: true                             # Keep the container running
+    privileged: false                            # Normally not needed, set to true if you need extra permissions
+    environment:
+      - LANG=en_US.UTF-8
+      - LC_ALL=en_US.UTF-8
+
+volumes:
+  yocto-downloads:                              #
+  yocto-sstate:
+  yocto-build:
