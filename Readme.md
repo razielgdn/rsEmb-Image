@@ -19,4 +19,11 @@ This repo have the purpose to create a stable raspberry Pi 4 image to use to lea
 - Stop the container:   
 ```docker stop <ID>```
 
+## to compile docker
+First approach 
+1. go to ```cd boards/rpi4/poky/``` 
+2. execute ```source oe-init-build-env build-rpi4```
+3. ```bitbake --runall fetch core-image-minimal ```
 
+## monitoring the host process
+```htop ```

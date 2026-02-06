@@ -13,4 +13,7 @@ The first objective is to create an image with no graphical interface, functiona
 ## Working in the container
 Today the Dockerfile and docker-compose file were created  I will check the container to do first steps in the process to compile an image. 
 
+## February 5, 2026
+
+The folders to content the two boards as I have was added with some modifications to the docker-compose.yml file to take the configuration of one of each at time. 
 
