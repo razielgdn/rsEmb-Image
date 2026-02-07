@@ -1,6 +1,6 @@
 # This Dockerfile sets up a Debian-based environment for building Yocto projects for Raspberry Pi on ARM64 architecture.
 
-FROM debian:trixie-slim
+FROM debian:12-slim
 # Configure timezone
 ENV TZ="America/Monterrey"
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
@@ -60,26 +60,9 @@ RUN groupadd --gid ${USER_GID} ${USERNAME} \
 RUN echo "${USERNAME} ALL=(ALL) NOPASSWD: /bin/chown" >> /etc/sudoers.d/${USERNAME} \
     && chmod 0440 /etc/sudoers.d/${USERNAME}
 
-
-# Configure persistent bash history to use the `yocto-history` volume
-# This creates a small script in /etc/profile.d that sets HISTFILE to
-# /home/${USERNAME}/history/.bash_history when that directory exists.
-RUN mkdir -p /home/${USERNAME}/history && \
-    cat > /etc/profile.d/yocto-history.sh <<'EOF'
-if [ -d /home/${USERNAME}/history ]; then
-  HISTFILE=/home/${USERNAME}/history/.bash_history
-  export HISTFILE
-  HISTSIZE=10000
-  HISTFILESIZE=20000
-  export HISTSIZE HISTFILESIZE
-  shopt -s histappend
-  # Ensure history is appended and reloaded each prompt
-  PROMPT_COMMAND='history -a; history -n; '${PROMPT_COMMAND:-}
-  export PROMPT_COMMAND
-fi
-EOF
-RUN chmod 644 /etc/profile.d/yocto-history.sh && \
-    echo 'if [ -f /etc/profile.d/yocto-history.sh ]; then . /etc/profile.d/yocto-history.sh; fi' >> /etc/bash.bashrc
+# Create volume directories and ensure proper permissions
+RUN mkdir -p /home/yocto/downloads /home/yocto/sstate-cache /home/yocto/build \
+    && chown -R ${USER_UID}:${USER_GID} /home/yocto
 
 # Switch to the user
 USER ${USERNAME}

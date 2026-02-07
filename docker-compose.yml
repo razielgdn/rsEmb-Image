@@ -9,9 +9,12 @@ services:
     image: yocto-builder:latest                  # 
     container_name: yocto-dev                    # Yocto development container 
     working_dir: /home/yocto/workspace           # Working directory inside the container
+    user: "${UID:-1000}:${GID:-1000}"           # Run as host user to match permissions
     volumes:
-      - .:/home/yocto/workspace:cached           # Source code    
-      - yocto-history:/home/yocto/history        # Persistent bash history
+      - .:/home/yocto/workspace:cached           # Source code
+      - yocto-downloads:/home/yocto/downloads    # Downloads
+      - yocto-sstate:/home/yocto/sstate-cache    # Sstate cache
+      - yocto-build:/home/yocto/build            # 
     tty: true
     stdin_open: true                             # Keep the container running
     environment:
@@ -21,4 +24,6 @@ services:
       - BOARD=${BOARD:-rpi4}  # Default to rpi4, override with: BOARD=aml-s905x-cc
 
 volumes:
-  yocto-history:
+  yocto-downloads:                              #
+  yocto-sstate:
+  yocto-build:
