@@ -61,7 +61,7 @@ RUN echo "${USERNAME} ALL=(ALL) NOPASSWD: /bin/chown" >> /etc/sudoers.d/${USERNA
     && chmod 0440 /etc/sudoers.d/${USERNAME}
 
 # Create volume directories and ensure proper permissions
-RUN mkdir -p /home/yocto/downloads /home/yocto/sstate-cache /home/yocto/build \
+RUN mkdir -p /home/yocto/downloads /home/yocto/sstate-cache /home/yocto/tmp \
     && chown -R ${USER_UID}:${USER_GID} /home/yocto
 
 # Switch to the user

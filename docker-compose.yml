@@ -14,7 +14,7 @@ services:
       - .:/home/yocto/workspace:cached           # Source code
       - yocto-downloads:/home/yocto/downloads    # Downloads
       - yocto-sstate:/home/yocto/sstate-cache    # Sstate cache
-      - yocto-build:/home/yocto/build            # 
+      - yocto-tmp:/home/yocto/tmp            # 
     tty: true
     stdin_open: true                             # Keep the container running
     environment:
@@ -24,6 +24,6 @@ services:
       - BOARD=${BOARD:-rpi4}  # Default to rpi4, override with: BOARD=aml-s905x-cc
 
 volumes:
-  yocto-downloads:                              #
+  yocto-downloads:                              
   yocto-sstate:
-  yocto-build:
+  yocto-tmp:
