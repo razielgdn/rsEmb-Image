@@ -26,3 +26,11 @@ The container crashed due to issues with file ownership related to the large num
 > Some packages cannot compile on the first attempt, which is common when using BitBake. These packages often need to be compiled manually one at a time, and various minor issues must be fixed—such as corrupted packages that need to be erased and re-downloaded, network disconnections, and similar issues.
 > - **gcc-cross-aarch64** was one such package
 > - **cmake-native** appears to have an issue and is a dependency for gcc-cross-aarch64
+> - Many issues arose because the system RAM wasn't enough. My PC has "only" 16GB, which is not enough to compile **gcc** with **8 threads**. The solution was to configure 4 threads in local.conf for my setup. 
+
+## February 7, 2026
+Finally I have a compiled image, I need to test it in a board but all the process is complete, no more error occurs.
+I added my friend Felipe Lopez and my brother Abner Guendulain to the project. I hope they help me to improve my ideas here, provide technical support, and contribute with their own projects to this initiative. 
+
+## February 8, 2026
+I will document the process more accurately. I am using Gemini to improve this.
