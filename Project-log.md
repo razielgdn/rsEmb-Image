@@ -34,3 +34,19 @@ I added my friend Felipe Lopez and my brother Abner Guendulain to the project. I
 
 ## February 8, 2026
 I will document the process more accurately. I am using Gemini to improve this.
+
+## February 9, 2026
+In the process of recreate the compilation the system crash again, I am perform the investigation of what is happening. In this process some packages failed in more of one attempt:
+ - curl-native
+ - cmake-native
+ - gcc
+ - libsolv
+ - libsolv-native
+ - libmodulemd
+ - libmodulemd-native
+ - swig-native
+ - gnutls
+An I have a kernel panic again instead the local.conf file is good configures. 
+The investigation continues
+I believe that is a problem with mi PC and his performance, I need more ram and Processor resources.
+ 

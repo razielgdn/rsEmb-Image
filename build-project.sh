@@ -18,10 +18,30 @@ echo " "
 echo "Copied configuration files for $BOARD"
 
 echo "First download required packages"
-bitbake --runall fetch core-image-minimal 
 
-echo "Compile gcc to check if your setup can make the process."
-bitbake -k gcc
+bitbake core-image-minimal --runall=fetch
+
+echo "Compile required packages"
+# bitbake -k curl-native
+# bitbake -k cmake-native
+# bitbake -k libsolv
+# bitbake -k libsolv-native
+# bitbake -k libmodulemd
+# bitbake -k libmodulemd-native
+# bitbake -k swig-native
+# Next packages has dependency in order to appear
+bitbake -k gettext-minimal-native
+bitbake -k texinfo-dummy-native
+bitbake -k m4-native 
+bitbake -k gnutls
+#bitbake -k automake-native
+#bitbake -k pkgconfig
+#bitbake -k pkgconfig-native
+#bitbake -k libtool-native
+# packages with issues in last compilation
+#bitbake -k binutils-cross-aarch64
+#bitbake -k gcc-cross-aarch64
+#bitbake -k gcc
 
 echo "Starting build for $BOARD..."
 if bitbake core-image-minimal; then
