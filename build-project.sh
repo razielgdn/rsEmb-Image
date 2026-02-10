@@ -1,5 +1,22 @@
 #!/bin/bash
+
 set -e
+
+start_time=$SECONDS
+
+VERBOSE=false
+if [ "$1" = "-v" ] || [ "$1" = "--verbose" ]; then
+    VERBOSE=true
+    shift
+fi
+
+verbose_echo() {
+    if [ "$VERBOSE" = true ]; then
+        echo "$@"
+    fi
+}
+
+# First argument is board name (e.g., rpi4, aml-s905x for Le Potato)
 BOARD=${1:-rpi4}
 WORKSPACE="/home/yocto/workspace"
 
@@ -9,45 +26,32 @@ if [ ! -d "$WORKSPACE/boards/$BOARD" ]; then
 fi
 
 echo "Initializing Yocto for board: $BOARD"
+verbose_echo "Workspace is at $WORKSPACE"
+
 cd "$WORKSPACE/boards/$BOARD/poky"
 source oe-init-build-env ../build-$BOARD
-echo "Sourced Yocto environment for $BOARD"
-# Copy board-specific configuration
-cp $WORKSPACE/boards/$BOARD/conf/* conf/
-echo " " 
-echo "Copied configuration files for $BOARD"
+verbose_echo "Sourced Yocto environment for $BOARD"
 
-echo "First download required packages"
+# Copy board-specific configuration
+cp "$WORKSPACE/boards/$BOARD/conf/"* conf/
+echo " " 
+verbose_echo "Copied configuration files for $BOARD"
+
+verbose_echo "First download required packages"
 
 bitbake core-image-minimal --runall=fetch
-
-echo "Compile required packages"
-# bitbake -k curl-native
-# bitbake -k cmake-native
-# bitbake -k libsolv
-# bitbake -k libsolv-native
-# bitbake -k libmodulemd
-# bitbake -k libmodulemd-native
-# bitbake -k swig-native
-# Next packages has dependency in order to appear
-bitbake -k gettext-minimal-native
-bitbake -k texinfo-dummy-native
-bitbake -k m4-native 
-bitbake -k gnutls
-#bitbake -k automake-native
-#bitbake -k pkgconfig
-#bitbake -k pkgconfig-native
-#bitbake -k libtool-native
-# packages with issues in last compilation
-#bitbake -k binutils-cross-aarch64
-#bitbake -k gcc-cross-aarch64
-#bitbake -k gcc
 
 echo "Starting build for $BOARD..."
 if bitbake core-image-minimal; then
     echo "Build completed successfully!"
+    end_time=$SECONDS
+    duration=$((end_time - start_time))
+    echo "Total script time: $(($duration / 60)) minutes and $(($duration % 60)) seconds."
 else
     echo "Build failed."
     echo "Advice: Check the logs above. If you see resource errors, try reducing BB_NUM_THREADS in local.conf."
+    end_time=$SECONDS
+    duration=$((end_time - start_time))
+    echo "Total script time until failure: $(($duration / 60)) minutes and $(($duration % 60)) seconds."
     exit 1
 fi

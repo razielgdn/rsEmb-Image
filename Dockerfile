@@ -34,6 +34,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     zutils \
     lz4 \
     zstd \
+    bzip2 \
+    autoconf \
+    automake \
+    libtool \
+    autopoint \
+    m4 \
+    pkgconf \
     xz-utils \
     python3-yaml \
     ca-certificates \

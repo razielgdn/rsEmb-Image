@@ -36,7 +36,8 @@ I added my friend Felipe Lopez and my brother Abner Guendulain to the project. I
 I will document the process more accurately. I am using Gemini to improve this.
 
 ## February 9, 2026
-In the process of recreate the compilation the system crash again, I am perform the investigation of what is happening. In this process some packages failed in more of one attempt:
+
+While attempting to recreate the build, the system crashed again. I am investigating the root cause. During this process, several packages failed multiple times:
  - curl-native
  - cmake-native
  - gcc
@@ -46,7 +47,11 @@ In the process of recreate the compilation the system crash again, I am perform 
  - libmodulemd-native
  - swig-native
  - gnutls
-An I have a kernel panic again instead the local.conf file is good configures. 
-The investigation continues
-I believe that is a problem with mi PC and his performance, I need more ram and Processor resources.
- 
+Despite having a correctly configured `local.conf`, I encountered another kernel panic. The investigation continues; I suspect my PC's hardware limitations (RAM and CPU) might be the bottleneck.
+
+## February 10, 2026
+I discovered that the issue was actually my Docker setup. The `debian:12-slim` image lacked several essential host packages required by BitBake to build `-native` tools.
+After installing the missing dependencies, the compilation was successful.
+The Dockerfile and build scripts have been updated accordingly.
+
+The next step is to create the configuration for a custom distribution.
