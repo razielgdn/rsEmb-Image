@@ -47,6 +47,10 @@ if bitbake core-image-minimal; then
     end_time=$SECONDS
     duration=$((end_time - start_time))
     echo "Total script time: $(($duration / 60)) minutes and $(($duration % 60)) seconds."
+    echo "Image available on /tmp/deploy/images/raspberrypi4-64/core-image-minimal-raspberrypi4-64.rootfs-20260210072605.tar.bz2"
+    echo "copy image to build directory"
+    cp /home/yocto/tmp/deploy/images/raspberrypi4-64/core-image-minimal-raspberrypi4-64.rootfs-*.tar.bz2 .
+    
 else
     echo "Build failed."
     echo "Advice: Check the logs above. If you see resource errors, try reducing BB_NUM_THREADS in local.conf."
