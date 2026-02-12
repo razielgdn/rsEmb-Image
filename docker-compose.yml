@@ -1,0 +1,29 @@
+# Docker compose file for RisingEmbedded Yocto development environment
+services:
+  yocto:
+    build: 
+      context: .                                 # Build context
+      args:
+        USER_UID: ${UID:-1000}
+        USER_GID: ${GID:-1000}
+    image: yocto-builder:latest                  # 
+    container_name: yocto-dev                    # Yocto development container 
+    working_dir: /home/yocto/workspace           # Working directory inside the container
+    user: "${UID:-1000}:${GID:-1000}"            # Run as host user to match permissions
+    volumes:
+      - .:/home/yocto/workspace:cached           # dektop workspace
+      - yocto-downloads:/home/yocto/downloads    # downloads
+      - yocto-sstate:/home/yocto/sstate-cache    # sstate cache
+      - yocto-tmp:/home/yocto/tmp                # tmp folder where the build output
+    tty: true
+    stdin_open: true                             # Keep the container running
+    environment:
+      - LANG=en_US.UTF-8
+      - LC_ALL=en_US.UTF-8
+      - TERM=xterm-256color                      # Enable color output in terminal
+      - BOARD=${BOARD:-rpi4}                     # Default to rpi4, override with: BOARD=aml-s905x-cc
+
+volumes:
+  yocto-downloads:                              
+  yocto-sstate:
+  yocto-tmp:

@@ -1,0 +1,53 @@
+# .gitignore - Yocto / BitBake build artifacts and common ignores
+# Add or remove entries as needed for your local workflow
+
+# BitBake / Yocto build outputs
+tmp/
+tmp-*/
+sstate-cache/
+downloads/
+build-*/
+cache/
+work/
+work-shared/
+tmp-glibc/
+
+# Board-specific build directories
+boards/**/build-*/
+boards/**/build-*/tmp/
+boards/**/build-*/cache/
+boards/**/build-*/sstate-cache/
+boards/**/build-*/downloads/
+
+# Project Docker volumes/host caches used by this repo
+yocto-downloads/
+yocto-sstate/
+
+# Poky / bitbake helper files
+.bitbake.lock
+bitbake.lock
+
+# Deploy images and temporary deploy directories
+deploy/
+tmp/deploy/
+tmp/deploy/images/
+deploy/images/
+
+# Common editor / OS artifacts
+__pycache__/
+*.py[cod]
+*.swp
+*~
+.vscode/
+.idea/
+.DS_Store
+
+# Logs, caches
+.cache/
+*.log
+pyshtables.py
+.github/copilot-instructions.md
+notepad.txt
+*.sdimg
+*.wic
+*.bz2
