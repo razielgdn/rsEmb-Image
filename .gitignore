@@ -48,3 +48,6 @@ __pycache__/
 pyshtables.py
 .github/copilot-instructions.md
 notepad.txt
+*.sdimg
+*.wic
+*.bz2

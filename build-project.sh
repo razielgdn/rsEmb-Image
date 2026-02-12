@@ -2,6 +2,60 @@
 
 set -e
 
+# Function to display help
+show_help() {
+    cat << 'EOF'
+Usage: ./build-project.sh [OPTIONS] [BOARD] [PROFILE]
+
+Build a Yocto image for Raspberry Pi or other boards.
+
+OPTIONS:
+  -h, --help      Show this help message
+  -v, --verbose   Enable verbose output for debugging
+
+ARGUMENTS:
+  BOARD           Target board (default: rpi4)
+                  Supported: 
+                    - rpi4: Raspberry Pi 4
+                    - lcbPot: Libre Computer AML-S905X-CC (Le Potato) 
+                              To be developed in the future, currently only rpi4 is supported 
+                  
+  PROFILE         Build profile (default: rsEmOs)
+                  Supported: 
+                    - minimal: Minimal image without GUI
+                    - rsEmOs: Rising Embedded OS (custom distribution)
+
+EXAMPLES:
+  # Build minimal image for RPi4
+  ./build-project.sh minimal rpi4
+
+  # Build Rising Embedded OS for RPi4 (default)
+  ./build-project.sh
+
+  # Build minimal image with verbose output
+  ./build-project.sh -v minimal rpi4
+
+  # Build for Libre Computer board (aml-s905x-cc) 
+  ./build-project.sh lcbPot rising-embedded-os
+
+OUTPUT:
+  - Built images are located in: boards/BOARD/build-BOARD/tmp/deploy/images/
+  - Final SD image: boards/BOARD/BOARD-image-to-flash.sdimg
+
+TROUBLESHOOTING:
+  - If build fails due to resource errors, reduce BB_NUM_THREADS in local.conf
+  - Use -v/--verbose flag to see detailed build progress
+  - Check BitBake logs in: boards/BOARD/build-BOARD/tmp/work/
+
+EOF
+}
+
+# Check for help flag
+if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+    show_help
+    exit 0
+fi
+
 start_time=$SECONDS
 
 VERBOSE=false
@@ -16,8 +70,24 @@ verbose_echo() {
     fi
 }
 
-# First argument is board name (e.g., rpi4, aml-s905x for Le Potato)
+# First argument is board name (e.g., rpi4, lcbPot for Libre Computer AML-S905X-CC)
+# Optional profile: minimal or rsEmOs (default)
+PROFILE=""
+BOARD=""
+
+if [ "$1" = "minimal" ] || [ "$1" = "rsEmOs" ]; then
+    PROFILE="$1"
+    shift
+fi
+
 BOARD=${1:-rpi4}
+shift || true
+
+if [ -z "$PROFILE" ] && { [ "$1" = "minimal" ] || [ "$1" = "rsEmOs" ]; }; then
+    PROFILE="$1"
+fi
+
+PROFILE=${PROFILE:-rsEmOs}
 WORKSPACE="/home/yocto/workspace"
 
 if [ ! -d "$WORKSPACE/boards/$BOARD" ]; then
@@ -33,23 +103,50 @@ source oe-init-build-env ../build-$BOARD
 verbose_echo "Sourced Yocto environment for $BOARD"
 
 # Copy board-specific configuration
-cp "$WORKSPACE/boards/$BOARD/conf/"* conf/
+CONF_DIR="$WORKSPACE/boards/$BOARD/conf"
+
+if [ "$PROFILE" = "minimal" ]; then
+    BBLAYERS_SRC="$CONF_DIR/bblayers-minimal.conf"
+    LOCAL_SRC="$CONF_DIR/local-minimal.conf"
+    BUILD_TARGET="core-image-minimal"
+else
+    BBLAYERS_SRC="$CONF_DIR/bblayers-rising-embedded-os.conf"
+    LOCAL_SRC="$CONF_DIR/local-rising-embedded-os.conf"
+    BUILD_TARGET="rising-embedded-os-image"
+fi
+
+cp "$BBLAYERS_SRC" conf/bblayers.conf
+cp "$LOCAL_SRC" conf/local.conf
 echo " " 
-verbose_echo "Copied configuration files for $BOARD"
+verbose_echo "Copied configuration files for $BOARD ($PROFILE)"
 
 verbose_echo "First download required packages"
 
-bitbake core-image-minimal --runall=fetch
+bitbake "$BUILD_TARGET" --runall=fetch
 
-echo "Starting build for $BOARD..."
-if bitbake core-image-minimal; then
+echo "Starting build for $BOARD ($BUILD_TARGET)..."
+if bitbake "$BUILD_TARGET"; then
     echo "Build completed successfully!"
     end_time=$SECONDS
     duration=$((end_time - start_time))
     echo "Total script time: $(($duration / 60)) minutes and $(($duration % 60)) seconds."
-    echo "Image available on /tmp/deploy/images/raspberrypi4-64/core-image-minimal-raspberrypi4-64.rootfs-20260210072605.tar.bz2"
+    echo "Image available under build-$BOARD/tmp/deploy/images (target: $BUILD_TARGET)"
     echo "copy image to build directory"
-    cp /home/yocto/tmp/deploy/images/raspberrypi4-64/core-image-minimal-raspberrypi4-64.rootfs-*.tar.bz2 .
+    # Copy built image to board directory
+    case "$BOARD" in
+        rpi4)
+            cp "tmp/deploy/images/raspberrypi4-64/${BUILD_TARGET}-raspberrypi4-64.rootfs-"*.rpi-sdimg "../rpi4-image-to-flash.sdimg"
+            ;;
+        lcbPot)
+            # This will be developed in the future. 
+            #cp "tmp/deploy/images/aml-s905x-cc/${BUILD_TARGET}-aml-s905x-cc.rootfs-"*.sdimg "../lcbPot-image-to-flash.sdimg"
+            #;;
+        *)
+            echo "Error: Unknown board '$BOARD'"
+            exit 1
+            ;;
+    esac
+    echo "Image copied to boards/$BOARD/$(basename ../$(ls ../$(echo $BOARD | sed 's/Pot/-s905x-cc/')-image-to-flash.sdimg))"
     
 else
     echo "Build failed."

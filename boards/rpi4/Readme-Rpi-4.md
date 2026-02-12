@@ -1,14 +1,14 @@
 # Raspberry Pi 4 Build Configuration
-
-# Building the Image
+## Overview
+## Process for building a minimal image:
 First approach
 1. Navigate to the directory: ```cd boards/rpi4/poky/```.
-2. execute ```source oe-init-build-env build-rpi4```.
+2. Execute ```source oe-init-build-env build-rpi4```.
 3. Configure your `local.conf`. 
-  You can copy the file `./conf/local.conf` folder
+  You can copy the file from the `./conf/local.conf` folder.
 4. Configure the `bblayers.conf`.
-  You can copy the file  `./conf/bblayers.conf`. 
-5. First download required packages: 
+  You can copy the file from `./conf/bblayers.conf`. 
+5. Download required packages first: 
    ```bash 
      bitbake --runall fetch core-image-minimal 
    ```
@@ -21,18 +21,12 @@ First approach
   - The problem required erasing the configuration and rebuilding: 
     ```bash
       rm -rf /home/yocto/tmp/work/x86_64-linux/gcc-cross-aarch64/*
-    ```  
-  - Rerunning bitbake: 
+    ```      
+    - Rerunning bitbake: 
     ```bash
       bitbake -k gcc-cross-aarch64
     ```
-## Build script
-A buid script was created to improve the process. At this moment of the development you can run the script:
-
-```bash
-./build-project.sh
-```
-
+> This process was needed to compile an image manually, the build-project.sh script automates some steps for the minimal image. 
 
 ## Output
-
+The image to flash in the Raspberry pi 4 board will be stored in `boards/rpi4/build-rpi4/raspberrypi4-64-imege-to-flash.tar.bz2`
