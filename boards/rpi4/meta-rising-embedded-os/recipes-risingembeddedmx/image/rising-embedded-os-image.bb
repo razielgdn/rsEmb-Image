@@ -1,5 +1,5 @@
-SUMMARY = "recipe for an image"
-DESCRIPTION = "Custom image"
+SUMMARY = "Recipe for an image for rising embedded os."
+DESCRIPTION = "Custom image for rising embedded os based on core-image-base, with additional packages and features."
 LICENSE = "MIT"
 include recipes-core/images/core-image-base.bb
 

@@ -51,3 +51,12 @@ notepad.txt
 *.sdimg
 *.wic
 *.bz2
+*.tar.gz
+*.xz
+*.zip
+*.7z
+*.img
+*.iso
+*.bin
+*.dts
+*.dtsi
