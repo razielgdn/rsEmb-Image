@@ -18,10 +18,12 @@ boards/**/build-*/tmp/
 boards/**/build-*/cache/
 boards/**/build-*/sstate-cache/
 boards/**/build-*/downloads/
+boards/**/meta-custom/
 
 # Project Docker volumes/host caches used by this repo
 yocto-downloads/
 yocto-sstate/
+yocto-tmp/
 
 # Poky / bitbake helper files
 .bitbake.lock
@@ -30,8 +32,8 @@ bitbake.lock
 # Deploy images and temporary deploy directories
 deploy/
 tmp/deploy/
-tmp/deploy/images/
 deploy/images/
+
 
 # Common editor / OS artifacts
 __pycache__/
