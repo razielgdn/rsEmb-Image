@@ -53,7 +53,7 @@ RUN sed -i '/en_US.UTF-8/s/^# //' /etc/locale.gen && locale-gen
 ENV LANG=en_US.UTF-8 LANGUAGE=en_US:en LC_ALL=en_US.UTF-8
 
 # Install BitBake
-RUN git clone --branch 2.16 https://git.openembedded.org/bitbake/ /opt/yocto/bitbake
+RUN git clone https://git.openembedded.org/bitbake/ /opt/yocto/bitbake
 ENV PATH="/opt/yocto/bitbake/bin:${PATH}"
 
 # Configure user
@@ -62,7 +62,7 @@ ARG USER_UID=1000
 ARG USER_GID=$USER_UID
 RUN groupadd --gid ${USER_GID} ${USERNAME} \
     && useradd --uid ${USER_UID} --gid ${USER_GID} -m ${USERNAME}
-
+    
 # Allow yocto user to run sudo without password for volume permission fixes
 RUN echo "${USERNAME} ALL=(ALL) NOPASSWD: /bin/chown" >> /etc/sudoers.d/${USERNAME} \
     && chmod 0440 /etc/sudoers.d/${USERNAME}

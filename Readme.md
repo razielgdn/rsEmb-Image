@@ -1,82 +1,330 @@
-# Introduction
-This repo contains my findings while implementing the Yocto Project on a Raspberry Pi board and documents the process.
+# Yocto Project: Multi-Board Embedded Linux Builder
+
+## Introduction
+This repository documents the complete process of implementing the **Yocto Project** to build custom Linux images for embedded boards. It demonstrates production-ready workflows using Docker containerization and multi-board support.
 
 ## Overview
-This project creates a custom Linux image to run on a Raspberry Pi 4 board, using the **Yocto Project** in its **Scarthgap** version. It demonstrates the complete workflow of configuring and building a minimal embedded Linux distribution with customizable recipes and board-specific configurations.
+This project creates custom Linux images for multiple embedded boards using the **Yocto Project** (Scarthgap version). It showcases best practices for:
+- Containerized Yocto builds with persistent caching
+- Multi-board architecture (Raspberry Pi 4 and Libre Computer boards)
+- Custom layer development with feature-rich images
+- Reproducible builds across development environments
 
 ## Objectives
-The purpose of this repo is to create a stable Raspberry Pi 4 image, learn the basics of embedded Linux, and apply this knowledge to a useful project.
+- Create stable, production-ready images for Raspberry Pi 4 and Libre Computer boards
+- Master embedded Linux fundamentals through practical implementation
+- Develop reusable build automation and documentation
+- Share knowledge and best practices with the embedded Linux community
 
-## Download the project
-[rsEmb-Image](https://github.com/razielgdn/rsEmb-Image.git) project can be cloned using the following command:
+## Project Structure
+```
+raspberry-yocto/
+├── Dockerfile                      # Yocto builder container (Debian 12 + BitBake 2.16)
+├── docker-compose.yml              # Container orchestration with volume persistence
+├── build-project.sh                # Automated build script (board selection, env setup)
+├── Readme.md                       # This file
+├── Project-log.md                  # Development timeline and decisions
+│
+├── boards/
+│   ├── rpi4/                       # Raspberry Pi 4 board configuration
+│   │   ├── poky/                   # Yocto core (git submodule)
+│   │   │   ├── meta/               # OE-Core base layer
+│   │   │   ├── meta-poky/          # Poky distribution layer
+│   │   │   ├── meta-yocto-bsp/     # Reference BSP layer
+│   │   │   └── oe-init-build-env   # Environment setup script
+│   │   ├── meta-openembedded/      # Additional recipes (git submodule)
+│   │   │   ├── meta-oe/            # General utilities
+│   │   │   ├── meta-python/        # Python recipes
+│   │   │   ├── meta-networking/    # Network tools
+│   │   │   ├── meta-multimedia/    # Multimedia support
+│   │   │   └── meta-filesystems/   # Filesystem utilities
+│   │   ├── meta-raspberrypi/       # RPi BSP layer (git submodule)
+│   │   │   ├── recipes-kernel/     # Kernel recipes and patches
+│   │   │   ├── recipes-bsp/        # Bootloader and firmware
+│   │   │   └── conf/machine/       # Machine definitions
+│   │   ├── meta-rising-embedded-os/ # Custom layer (git submodule)
+│   │   │   ├── conf/               # Layer configuration
+│   │   │   ├── recipes-bsp/        # Custom BSP recipes
+│   │   │   ├── recipes-kernel/     # Kernel customizations
+│   │   │   └── recipes-risingembeddedmx/ # Custom image recipes
+│   │   ├── conf/                   # Build configuration templates
+│   │   │   ├── local-minimal.conf  # Minimal image config
+│   │   │   ├── local-rising-embedded-os.conf # Full-featured config
+│   │   │   ├── bblayers-minimal.conf # Minimal layer setup
+│   │   │   └── bblayers-rising-embedded-os.conf # Full layer stack
+│   │   ├── build-rpi4/             # Build output directory (git-ignored)
+│   │   │   ├── conf/               # Active build configuration
+│   │   │   │   ├── local.conf      # Machine, parallelism, features
+│   │   │   │   └── bblayers.conf   # Layer ordering and paths
+│   │   │   ├── tmp/                # Temporary build artifacts
+│   │   │   │   ├── deploy/images/  # Final images (*.wic, *.ext4)
+│   │   │   │   ├── work/           # Per-recipe build directories
+│   │   │   │   └── sysroots/       # Cross-compilation roots
+│   │   │   └── cache/              # BitBake metadata cache
+│   │   └── Readme-Rpi-4.md         # Board-specific documentation
+│   │
+│   └── aml-s905x-cc/               # Libre Computer board configuration
+│       ├── conf/                   # Board-specific config
+│       │   └── bblayers.conf       # Layer configuration for AML board
+│       └── README.md               # Board-specific documentation
+│
+└── Docker Volumes (persistent):
+    ├── yocto-downloads/            # Shared source downloads (~10-20GB)
+    ├── yocto-sstate/               # Shared state cache (~20-50GB, speeds rebuilds)
+    └── yocto-build/                # Build artifacts (optional persistence)
+```
+
+## Download the Project
+Clone the repository with all submodules:
 
 ```bash
-git clone https://github.com/razielgdn/rsEmb-Image.git
+git clone --recursive https://github.com/razielgdn/rsEmb-Image.git
 cd rsEmb-Image
 ```
 
-## How to work with the container
-- Build the image:   
- ```bash
-  docker compose up -d --build
- ```
+If you've already cloned without `--recursive`, initialize submodules:
+```bash
+git submodule update --init --recursive
+```
 
-- Run the container:   
+## Quick Start
 
- ```bash    
-  docker compose exec yocto bash
- ```  
-- Stop the container:   
- ```bash 
-  docker compose down
- ```
+### 1. Build and Start the Container
+```bash
+docker compose up -d --build
+```
 
-## Project Information
-This project serves as an example to demonstrate how to configure and develop using the **Yocto Project**.
+### 2. Access the Build Environment
+```bash
+docker compose exec yocto bash
+```
 
-The main goal is to provide the necessary recipes to build a custom Linux distribution that can run on two boards:
-
-- **Raspberry Pi 4**
-- **Libre Computer Le Potato (AML-S905X-CC)**
-
-- The script **[build-project.sh](build-project.sh)** contains all the steps needed to set up the environment and build an image for a selected board.  
-  It will be updated and improved as the project matures.
-
-- To build an image inside the container, you only need to make the script executable and run it:
-
+### 3. Build an Image
+Use the automated build script:
 ```bash
 chmod +x build-project.sh
-./build-project.sh -h # To see the help of the script
-./build-project.sh -v # To run the verbose mode 
-```   
+./build-project.sh -h  # Show help and available options
+./build-project.sh -v  # Build with verbose output
+```
 
-- The custom **meta-risingembeddedmx** layer provides a feature-rich image with:
-  - **SSH Server**: Dropbear SSH server for remote access
-  - **Network Support**: NetworkManager for network configuration, NFS utilities, and WiFi connectivity (BCM43430 firmware)
-  - Additional tools: rsync for file synchronization and NTFS filesystem support
+Or manually source the environment and build:
+```bash
+# For Raspberry Pi 4
+source boards/rpi4/poky/oe-init-build-env boards/rpi4/build-rpi4
+bitbake core-image-minimal  # or your custom image
+```
+
+### 4. Find the Built Image
+Built images are located at:
+- **RPi4**: `/home/yocto/tmp/deploy/images/raspberrypi4-64/`
+- **Libre Computer**: `boards/aml` Temptatively, the AML board is still in development, so the exact path may vary.
+
+## Container Management
+
+### Container Lifecycle
+- **Build and start**:   
+  ```bash
+  docker compose up -d --build
+  ```
+
+- **Access build environment**:   
+  ```bash    
+  docker compose exec yocto bash
+  ```  
+
+- **Stop container**:   
+  ```bash 
+  docker compose down
+  ```
+
+- **Rebuild from scratch** (when Dockerfile changes):
+  ```bash
+  docker compose build --no-cache
+  docker compose up -d
+  ```
+
+### Container Features
+- **Persistent volumes**: Downloads, sstate cache, and build artifacts survive container restarts
+- **Resource allocation**: Configure CPU/memory limits in docker-compose.yml
+- **Working directory**: `/home/yocto/workspace` (mounted from repository root)
+- **User**: Non-root user `yocto` (UID matches host for file permissions)
+
+## Supported Boards
+
+### Raspberry Pi 4
+- **Machine**: `raspberrypi4-64`
+- **Architecture**: ARM 64-bit (aarch64)
+- **Features**: WiFi, Bluetooth, GPIO, dual HDMI output, USB boot support
+- **Documentation**: [Readme-Rpi-4.md](boards/rpi4/Readme-Rpi-4.md)
+- **Status**: 
+  - [x] Minimal image with basic functionality
+  - [x] Customized image with additional features (networking, file systems, etc.) successfully built.
+  - [] Testing in the hardware not performed yet. 
   
-- Detailed instructions and board-specific information for the Raspberry Pi 4 can be found in:
-[Readme-Rpi-4.md](boards/rpi4/Readme-Rpi-4.md).
-- The development progress, daily challenges, decisions, and notes are documented in:
-[Project-log.md](Project-log.md).
-More detailed write-ups, explanations, tips & tricks, and lessons learned will be published on my blog:
-[Rising Embedded MX](https://razielgdn.github.io/risingembeddedmx/projects/en/yocto/intro/build-raspberrypi) (more articles will be added over time).
-<!--Links to define-->
+### Libre Computer Le Potato (AML-S905X-CC)  in development
+- **Machine**: 🔧 In development
+- **Architecture**: 🔧 In development
+- **Features**: 🔧 In development
+- **Documentation**: 🔧 In development
+- **Status**: 🔧 In development
 
-## Useful commands to this project
-### Docker commands:
-- Check the docker process:   
+## Custom Layer: meta-rising-embedded-os
+
+The **meta-risingembeddedmx** layer provides a production-ready embedded Linux image:
+
+### Included Features
+- **Remote Access**: Dropbear SSH server (lightweight alternative to OpenSSH)
+- **Network Management**: NetworkManager with command-line utilities
+- **WiFi Support**: BCM43430 firmware for Raspberry Pi 3/4 WiFi
+- **File Sharing**: NFS client/server utilities for network file systems
+- **File Synchronization**: rsync for efficient remote file transfer
+- **Filesystem Support**: NTFS-3G for read/write access to Windows filesystems
+
+### Configuration Templates
+Located in `boards/rpi4/conf/`:
+- **Minimal build**:
+  - `local-minimal.conf`: Basic system, minimal packages
+  - `bblayers-minimal.conf`: Core layers only
+- **Full-featured build**:
+  - `local-rising-embedded-os.conf`: All features enabled
+  - `bblayers-rising-embedded-os.conf`: Complete layer stack
+
+## Build Automation: build-project.sh
+The automated build script handles environment setup and board selection:
+
+### Usage
+```bash
+chmod +x build-project.sh
+./build-project.sh -h  # Display help and available options
+./build-project.sh -v  # Build with verbose output
+./build-project.sh -b rpi4  # Build for specific board
+```
+
+### Features
+- Automatic environment initialization
+- Board-specific configuration selection
+- Pre-build dependency checks
+- Verbose logging option
+
+## Documentation
+
+### Board-Specific Guides
+- **Raspberry Pi 4**: [Readme-Rpi-4.md](boards/rpi4/Readme-Rpi-4.md)
+  - Flashing images to SD cards
+  - WiFi and network configuration
+  - GPIO and hardware interfaces
+  - Troubleshooting common issues
+
+### Development Log
+- **Project Timeline**: [Project-log.md](Project-log.md)
+  - Daily development progress
+  - Technical decisions and rationale
+  - Challenges encountered and solutions
+  - Lessons learned
+
+### Blog Articles
+Detailed tutorials, tips & tricks, and deep-dives:
+- [Rising Embedded MX Blog](https://razielgdn.github.io/risingembeddedmx/projects/en/yocto/intro/build-raspberrypi)
+- Topics covered: Yocto basics, layer development, BSP customization, troubleshooting
+
+## Useful Commands
+
+### Docker Management
+- **Check running containers**:   
   ```bash
-    docker ps
+  docker ps
+  docker stats yocto-dev  # Monitor resource usage
   ```
-- Check the images:
+
+- **Inspect images**:
   ```bash
-    docker images
+  docker images
+  docker image inspect yocto-builder:latest
   ```
-- Check the volumes:
+
+- **Manage volumes**:
   ```bash
-    docker volume ls
+  docker volume ls
+  docker volume inspect yocto-downloads  # Check volume details
   ```
-### SO host
-- Monitor the host: `htop`
+
+### BitBake Commands (Inside Container)
+- **Build an image**:
+  ```bash
+  bitbake core-image-minimal           # Minimal bootable image
+  bitbake risingembeddedmx-image       # Custom full-featured image
+  ```
+
+- **Clean builds**:
+  ```bash
+  bitbake -c clean <recipe>            # Clean specific recipe
+  bitbake -c cleanall <recipe>         # Remove all artifacts including downloads
+  ```
+
+- **Dependency analysis**:
+  ```bash
+  bitbake -g <image>                   # Generate dependency graphs
+  bitbake -e <recipe> | grep ^VARIABLE # Inspect variable values
+  ```
+
+- **Prefetch sources** (recommended before first build):
+  ```bash
+  bitbake --runall fetch core-image-minimal
+  ```
+
+### Host System Monitoring
+- **Resource usage**:
+  ```bash
+  htop                                 # Interactive process viewer
+  df -h                                # Check disk space
+  free -h                              # Check memory usage
+  ```
+
+## Development Workflow
+
+### Typical Build Cycle
+1. **Start container**: `docker compose up -d`
+2. **Enter environment**: `docker compose exec yocto bash`
+3. **Source build environment**: `source boards/rpi4/poky/oe-init-build-env boards/rpi4/build-rpi4`
+4. **Modify recipes** in custom layers as needed
+5. **Run build**: `bitbake <image-name>`
+6. **Test image** on target hardware
+7. **Iterate**: Modify → Build → Test
+
+### Layer Development
+- Custom recipes go in `boards/rpi4/meta-rising-embedded-os/`
+- Follow Yocto naming conventions: `<name>_<version>.bb`
+- Test with `bitbake -c compile <recipe>` before full image build
+
+## Troubleshooting
+
+### Common Issues
+- **Fetch failures**: Check network connectivity, verify download mirrors
+- **Parse errors**: Validate recipe syntax with `bitbake-layers show-recipes`
+- **Builds**: Increase `BB_NUM_THREADS` and `PARALLEL_MAKE` in local.conf or decrease if running out of memory
+- **Permission issues**: Ensure Docker volumes have correct ownership and permissions
+- **Container crashes**: Monitor resource usage, adjust limits in docker-compose.yml
+
+### Getting Help
+- Check [Project-log.md](Project-log.md) for similar issues and solutions
+- Review Yocto documentation: https://docs.yoctoproject.org/
+- Ask to Gemini, Github Copilot Chat, or other AI assistants for quick troubleshooting tips.
+  
+## License
+This project follows the licensing of its components:
+- Yocto/Poky: Mix of GPL-2.0 and MIT licenses
+- Custom layers: Check individual layer LICENSE files
+- Build scripts and documentation: MIT License (see repository)
+
+## Acknowledgments
+
+- **Yocto Project**: https://www.yoctoproject.org/
+- **OpenEmbedded**: https://www.openembedded.org/
+- **Raspberry Pi Foundation**: https://www.raspberrypi.org/
+- **Libre Computer**: https://libre.computer/
+
+---
+
+**Author**: [Rising Embedded MX](https://razielgdn.github.io/risingembeddedmx/about/about-en)  
+**Repository**: [rsEmb-Image](https://github.com/razielgdn/rsEmb-Image)
   

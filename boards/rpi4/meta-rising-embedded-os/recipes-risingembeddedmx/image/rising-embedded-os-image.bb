@@ -1,7 +1,9 @@
-SUMMARY = "recipe for an image"
-DESCRIPTION = "Custom image"
+SUMMARY = "Recipe for an image for rising embedded os."
+DESCRIPTION = "Custom image for rising embedded os based on core-image-base, with additional packages and features."
 LICENSE = "MIT"
-include recipes-core/images/core-image-base.bb
+#include recipes-core/images/core-image-base.bb
+
+inherit core-image
 
 # Network services
 IMAGE_FEATURES += " nfs-server ssh-server-dropbear "
@@ -25,8 +27,6 @@ RM_OLD_IMAGE = "1"
 #IMAGE_INSTALL:append = " systemd-analyze "
 # Remove bluetooth packages
 IMAGE_INSTALL:remove = " bluez5 obexftp "
-# Set image overhead factor to 1.1
-IMAGE_OVERHEAD_FACTOR = "1.1"
 
 # Strip debug symbols and remove build artifacts
 #STRIP = "1"
@@ -37,5 +37,7 @@ BOOT_SPACE = "131072"
 
 # Align the root filesystem to 4KB and add extra space for growth
 IMAGE_ROOTFS_ALIGNMENT = "4096"
+# Set the overhead factor to account for filesystem metadata and growth
 IMAGE_OVERHEAD_FACTOR = "1.5"
+# Add extra space (512MB) to the root filesystem to ensure it can grow without running out of space
 IMAGE_ROOTFS_EXTRA_SPACE = "524288"

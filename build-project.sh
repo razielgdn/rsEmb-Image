@@ -135,12 +135,12 @@ if bitbake "$BUILD_TARGET"; then
     # Copy built image to board directory
     case "$BOARD" in
         rpi4)
-            cp "tmp/deploy/images/raspberrypi4-64/${BUILD_TARGET}-raspberrypi4-64.rootfs-"*.rpi-sdimg "../rpi4-image-to-flash.sdimg"
+            cp "/home/yocto/tmp/deploy/images/raspberrypi4-64/${BUILD_TARGET}-raspberrypi4-64.rootfs-"*.rpi-sdimg "../rpi4-image-to-flash.sdimg"
             ;;
         lcbPot)
             # This will be developed in the future. 
-            #cp "tmp/deploy/images/aml-s905x-cc/${BUILD_TARGET}-aml-s905x-cc.rootfs-"*.sdimg "../lcbPot-image-to-flash.sdimg"
-            #;;
+            #cp "/home/yocto/ tmp/deploy/images/aml-s905x-cc/${BUILD_TARGET}-aml-s905x-cc.rootfs-"*.sdimg "../lcbPot-image-to-flash.sdimg"
+            ;;
         *)
             echo "Error: Unknown board '$BOARD'"
             exit 1
