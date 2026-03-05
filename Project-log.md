@@ -17,6 +17,12 @@ The primary objective is to create a minimal image without a graphical interface
 - [x] Create a non-GUI image.
 - [ ] Test the image on a Raspberry Pi 4 board 
 
+
+## March 1, 2026
+The project is progressing well. The Docker container is set up and configured to support the Yocto
+I need to move the structure of the project to comply with scarthgap and add more bbappend examples. 
+I am near to publish the procedure to create the meta-risingembeddedmx layer in my blog. 
+
 ## February 12, 2026
 When you work with .bb files and .conf files remember the spaces between quotes for example:
 ```python

@@ -1,27 +1,39 @@
 # Docker compose file for RisingEmbedded Yocto development environment
 services:
   yocto:
-    build: 
-      context: .                                 # Build context
+    build:
+      context: .                                 # Build context from current directory
       args:                                      # Build arguments for user permissions
-        USER_UID: ${UID:-1000}                   # User ID, default to 1000 if not set   
-        USER_GID: ${GID:-1000}                   # Group ID, default to 1000 if not set
-    image: yocto-builder:latest                  # Yocto builder image
-    container_name: yocto-dev                    # Yocto development container 
-    working_dir: /home/yocto/workspace           # Working directory inside the container
-    user: "${UID:-1000}:${GID:-1000}"            # Run as host user to match permissions
+        USER_UID: ${UID:-1000}                   # User ID, defaults to 1000 if not set
+        USER_GID: ${GID:-1000}                   # Group ID, defaults to 1000 if not set
+    image: yocto-builder:latest                  # Yocto builder image tag
+    container_name: yocto-dev                    # Yocto development container name
+    working_dir: /home/yocto/workspace           # Default working directory inside container
+    user: "${UID:-1000}:${GID:-1000}"            # Run container as host user to match permissions
     volumes:
-      - .:/home/yocto/workspace:cached           # desktop workspace
-      - yocto-downloads:/home/yocto/downloads    # downloads
-      - yocto-sstate:/home/yocto/sstate-cache    # sstate cache
-      - yocto-tmp:/home/yocto/tmp                # tmp folder where the build output
-    tty: true
-    stdin_open: true                             # Keep the container running
+      - .:/home/yocto/workspace:cached           # Workspace (current directory)
+      - yocto-downloads:/home/yocto/downloads    # BitBake downloads cache
+      - yocto-sstate:/home/yocto/sstate-cache    # BitBake sstate cache
+      - yocto-tmp:/home/yocto/tmp                # BitBake tmp folder (build output)
+    tty: true                                    # Allocate a pseudo-terminal
+    stdin_open: true                             # Keep STDIN open even if not attached
     environment:
-      - LANG=en_US.UTF-8
-      - LC_ALL=en_US.UTF-8
-      - TERM=xterm-256color                      # Enable color output in terminal    
+      - LANG=en_US.UTF-8                         # Set language locale
+      - LC_ALL=en_US.UTF-8                       # Set all locale settings
+      - TERM=xterm-256color                      # Enable 256-color terminal support
+    deploy:
+      resources:
+        limits:
+          cpus: '10'                             # Limit container to 10 CPU cores
+          memory: 12G                            # Limit container to 12GB RAM          
+        reservations:
+          cpus: '2'                              # Reserve 2 CPU cores for optimal performance
+          memory: 4G                            # Reserve 4GB RAM for stable operation
+
 volumes:
-  yocto-downloads:                              
+  yocto-downloads:
+    driver: local                                # Local storage driver for downloads cache
   yocto-sstate:
+    driver: local                                # Local storage driver for sstate cache
   yocto-tmp:
+    driver: local                                # Local storage driver for build output
