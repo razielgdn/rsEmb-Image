@@ -7,7 +7,7 @@ This repository documents the complete process of implementing the **Yocto Proje
 This project creates custom Linux images for multiple embedded boards using the **Yocto Project** (Scarthgap version). It showcases best practices for:
 - Containerized Yocto builds with persistent caching
 - Multi-board architecture (Raspberry Pi 4 and Libre Computer boards)
-- Custom layer development with feature-rich images
+- Custom layer development with minimal and reproducible images
 - Reproducible builds across development environments
 
 ## Objectives
@@ -155,12 +155,12 @@ Built images are located at:
 ### Raspberry Pi 4
 - **Machine**: `raspberrypi4-64`
 - **Architecture**: ARM 64-bit (aarch64)
-- **Features**: WiFi, Bluetooth, GPIO, dual HDMI output, USB boot support
+- **Features**: WiFi, GPIO, dual HDMI output, USB boot support
 - **Documentation**: [Readme-Rpi-4.md](boards/rpi4/Readme-Rpi-4.md)
 - **Status**: 
   - [x] Minimal image with basic functionality
-  - [x] Customized image with additional features (networking, file systems, etc.) successfully built.
-  - [] Testing in the hardware not performed yet. 
+  - [x] Custom image (`rising-embedded-os-image`) successfully built.
+  - [x] Hardware testing completed on Raspberry Pi 4 (Wi-Fi + DHCPv4 working).
   
 ### Libre Computer Le Potato (AML-S905X-CC)  in development
 - **Machine**: 🔧 In development
@@ -171,15 +171,33 @@ Built images are located at:
 
 ## Custom Layer: meta-rising-embedded-os
 
-The **meta-risingembeddedmx** layer provides a production-ready embedded Linux image:
+The **meta-rising-embedded-os** layer provides a minimal embedded Linux image focused on connectivity and reproducible startup behavior.
 
 ### Included Features
 - **Remote Access**: Dropbear SSH server (lightweight alternative to OpenSSH)
-- **Network Management**: NetworkManager with command-line utilities
-- **WiFi Support**: BCM43430 firmware for Raspberry Pi 3/4 WiFi
-- **File Sharing**: NFS client/server utilities for network file systems
-- **File Synchronization**: rsync for efficient remote file transfer
-- **Filesystem Support**: NTFS-3G for read/write access to Windows filesystems
+- **Wi-Fi Support**: `wpa_supplicant` + `wpa_cli`
+- **DHCPv4 Client**: `busybox-udhcpc`
+- **Boot Automation**: `network-setup.service` for automatic Wi-Fi association and DHCP at boot
+- **Network Utilities**: `iproute2`, `iw`, `rfkill`
+
+### Automatic Wi-Fi at Boot
+The image includes a custom recipe:
+- `boards/rpi4/meta-rising-embedded-os/recipes-connectivity/network-setup/network-setup_1.0.bb`
+
+Installed artifacts:
+- `/usr/bin/network-setup.sh`
+- `network-setup.service` (enabled by default)
+
+This service runs at startup and performs:
+1. `rfkill unblock wifi`
+2. `wpa_supplicant` startup using `/etc/wpa_supplicant.conf`
+3. DHCP request via `udhcpc`
+
+To check status on target:
+```bash
+systemctl status network-setup
+journalctl -u network-setup -b --no-pager
+```
 
 ### Configuration Templates
 Located in `boards/rpi4/conf/`:
@@ -253,7 +271,7 @@ Detailed tutorials, tips & tricks, and deep-dives:
 - **Build an image**:
   ```bash
   bitbake core-image-minimal           # Minimal bootable image
-  bitbake risingembeddedmx-image       # Custom full-featured image
+  bitbake rising-embedded-os-image     # Custom image from meta-rising-embedded-os
   ```
 
 - **Clean builds**:

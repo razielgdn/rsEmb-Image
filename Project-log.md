@@ -2,12 +2,6 @@
 <!-- This document will record the objectives and scope by date, what has been achieved, and ideas for future development. -->
 ## Objectives
 
-<!--- [ ] The next objective will be to add a simple GUI to the image. -->
-
-
-### [ ] Create a recipe to define a custom distro 
-- [ ] Create the project structure and define the basics of the distro. 
-- [ ] Creation of the 
 
 <!--Mark the checkbox when finished all the the tasks-->
 ### [ ] Create a stable image from poky 
@@ -15,7 +9,12 @@ The primary objective is to create a minimal image without a graphical interface
 - [x] Research and implement a YAML configuration for the Docker container to support the project.
 - [x] Establish the project structure.
 - [x] Create a non-GUI image.
-- [ ] Test the image on a Raspberry Pi 4 board 
+- [x] Test the image on a Raspberry Pi 4 board 
+- [x] Configure WiFi from terminal. Automate the process with a script.
+  
+## March 12, 2026 21:49 pm
+With the help of Github Copilot Chat, I create an script to automate the process of conect to internet using wifi. I believe that is enogh to pos the progress in my blog. However I believe that is better configure the ssh and ftp to access the board to create a more complete tutorial. 
+To the record I can't go to the gym doing this. I am dissapointed and exited at the same time. 
 
 ## March 12, 2026 02:18 am
 I have internet connection at least, the wifi is working. Next step configure the ssh and ftp to access the board remotely. 
