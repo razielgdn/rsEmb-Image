@@ -22,6 +22,7 @@ IMAGE_INSTALL += "\
                   iw \
                   rfkill \
                   network-setup \
+                  default-user \
                   "
 
 #Only produce the "rpi-sdimg" image format
