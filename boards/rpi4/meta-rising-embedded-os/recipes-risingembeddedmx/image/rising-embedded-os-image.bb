@@ -52,10 +52,23 @@ IMAGE_ROOTFS_EXTRA_SPACE = "524288"
 
 # Ensure admin binaries are available without full paths in login shells.
 ROOTFS_POSTPROCESS_COMMAND += "set_admin_paths;"
+ROOTFS_POSTPROCESS_COMMAND += "add_network_tool_symlinks;"
 
 set_admin_paths() {
     if [ -f ${IMAGE_ROOTFS}${sysconfdir}/profile ]; then
         grep -q '/usr/sbin' ${IMAGE_ROOTFS}${sysconfdir}/profile || \
             echo 'export PATH="$PATH:/usr/sbin:/sbin"' >> ${IMAGE_ROOTFS}${sysconfdir}/profile
     fi
+}
+
+add_network_tool_symlinks() {
+    install -d ${IMAGE_ROOTFS}${bindir}
+
+    for cmd in ip iw wpa_supplicant wpa_cli; do
+        if [ -x ${IMAGE_ROOTFS}${sbindir}/$cmd ] && [ ! -e ${IMAGE_ROOTFS}${bindir}/$cmd ]; then
+            ln -sf ${sbindir}/$cmd ${IMAGE_ROOTFS}${bindir}/$cmd
+        elif [ -x ${IMAGE_ROOTFS}${base_sbindir}/$cmd ] && [ ! -e ${IMAGE_ROOTFS}${bindir}/$cmd ]; then
+            ln -sf ${base_sbindir}/$cmd ${IMAGE_ROOTFS}${bindir}/$cmd
+        fi
+    done
 }
