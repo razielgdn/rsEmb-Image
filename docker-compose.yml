@@ -21,14 +21,10 @@ services:
       - LANG=en_US.UTF-8                         # Set language locale
       - LC_ALL=en_US.UTF-8                       # Set all locale settings
       - TERM=xterm-256color                      # Enable 256-color terminal support
-    deploy:
-      resources:
-        limits:
-          cpus: '10'                             # Limit container to 10 CPU cores
-          memory: 12G                            # Limit container to 12GB RAM          
-        reservations:
-          cpus: '2'                              # Reserve 2 CPU cores for optimal performance
-          memory: 4G                            # Reserve 4GB RAM for stable operation
+    # Resource limits (docker-compose v3 syntax)
+    cpus: '10'                                   # Limit container to 10 CPU cores
+    mem_limit: 12G                               # Limit container to 12GB RAM
+    memswap_limit: 12G                           # Prevent swap usage beyond memory limit
 
 volumes:
   yocto-downloads:

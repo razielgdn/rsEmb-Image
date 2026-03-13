@@ -17,6 +17,17 @@ The primary objective is to create a minimal image without a graphical interface
 - [x] Create a non-GUI image.
 - [ ] Test the image on a Raspberry Pi 4 board 
 
+## March 12, 2026 02:18 am
+I have internet connection at least, the wifi is working. Next step configure the ssh and ftp to access the board remotely. 
+The problem is that tomorrow I need to go to work at office at 7:30am. 
+
+## March 11, 2026
+I have been testing the image on the board, and ... I have troubles to configure the WiFi. At this moment 
+the wpa_supplicant package is not working in the image researching about it I found that scarthgap needs the bluetoot support because is an only one driver for both, also the wpa_cli package is not isntalling becuase I disable the recommended packages for the image. As I am trying to create a minimal image, I add the needed packages manually. I am building the image and I will test when it finish. 
+
+
+## March 8, 2026
+Today I tested the image on the board and discovered that a couple of packages were not included, even though I remembered them being enabled by default in Kirkstone. I have added them to the image recipe and am still testing. If everything works today, I will publish the procedure to create the meta-risingembeddedmx layer on my blog. It is 23:26 right now, so I will publish it in the next few days.
 
 ## March 1, 2026
 The project is progressing well. The Docker container is set up and configured to support the Yocto

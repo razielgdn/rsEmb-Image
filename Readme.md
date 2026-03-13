@@ -117,6 +117,7 @@ bitbake core-image-minimal  # or your custom image
 ### 4. Find the Built Image
 Built images are located at:
 - **RPi4**: `/home/yocto/tmp/deploy/images/raspberrypi4-64/`
+- **Final flash image (.rpi-sdimg)**: `/output/rpi4-image-to-flash.rpi-sdimg`
 - **Libre Computer**: `boards/aml` Temptatively, the AML board is still in development, so the exact path may vary.
 
 ## Container Management
