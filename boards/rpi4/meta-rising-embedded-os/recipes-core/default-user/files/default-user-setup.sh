@@ -24,7 +24,7 @@ if [ -z "$USER_NAME" ] || [ -z "$USER_PASS" ]; then
     exit 0
 fi
 
-if [ "$USER_NAME" = "embedded" ] || [ "$USER_PASS" = "change-me" ]; then
+if [ "$USER_NAME" = "user-default" ] || [ "$USER_PASS" = "<change-me>" ]; then
     echo "default-user-setup: placeholder credentials detected; skipping"
     exit 0
 fi
