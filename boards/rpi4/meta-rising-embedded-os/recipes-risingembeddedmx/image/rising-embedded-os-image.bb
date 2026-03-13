@@ -21,6 +21,7 @@ IMAGE_INSTALL += "\
                   iproute2 \
                   iw \
                   rfkill \
+                  openssh-sftp-server \
                   network-setup \
                   default-user \
                   "
@@ -55,7 +56,7 @@ IMAGE_ROOTFS_EXTRA_SPACE = "524288"
 
 # Ensure admin binaries are available without full paths in login shells.
 ROOTFS_POSTPROCESS_COMMAND += "set_admin_paths;"
-ROOTFS_POSTPROCESS_COMMAND += "add_network_tool_symlinks;"
+ROOTFS_POSTPROCESS_COMMAND += "link_sbin_binaries_to_bin;"
 
 set_admin_paths() {
     if [ -f ${IMAGE_ROOTFS}${sysconfdir}/profile ]; then
@@ -64,14 +65,22 @@ set_admin_paths() {
     fi
 }
 
-add_network_tool_symlinks() {
+link_sbin_binaries_to_bin() {
     install -d ${IMAGE_ROOTFS}${bindir}
 
-    for cmd in ip iw wpa_supplicant wpa_cli; do
-        if [ -x ${IMAGE_ROOTFS}${sbindir}/$cmd ] && [ ! -e ${IMAGE_ROOTFS}${bindir}/$cmd ]; then
-            ln -sf ${sbindir}/$cmd ${IMAGE_ROOTFS}${bindir}/$cmd
-        elif [ -x ${IMAGE_ROOTFS}${base_sbindir}/$cmd ] && [ ! -e ${IMAGE_ROOTFS}${bindir}/$cmd ]; then
-            ln -sf ${base_sbindir}/$cmd ${IMAGE_ROOTFS}${bindir}/$cmd
-        fi
+    for srcdir in ${IMAGE_ROOTFS}${base_sbindir} ${IMAGE_ROOTFS}${sbindir}; do
+        [ -d "$srcdir" ] || continue
+
+        for src in "$srcdir"/*; do
+            [ -f "$src" ] || continue
+            [ -x "$src" ] || continue
+
+            cmd="$(basename "$src")"
+            dest="${IMAGE_ROOTFS}${bindir}/$cmd"
+            [ -e "$dest" ] && continue
+
+            rel="${src#${IMAGE_ROOTFS}}"
+            ln -sf "$rel" "$dest"
+        done
     done
 }

@@ -199,6 +199,73 @@ systemctl status network-setup
 journalctl -u network-setup -b --no-pager
 ```
 
+### Enable SSH (Dropbear)
+Run these commands as `root` on the target board:
+
+```bash
+su
+systemctl enable --now dropbear.socket
+systemctl status dropbear.socket
+```
+Connect from PC or another device:
+```bash 
+ssh <username>@<target-ip>
+``` 
+
+### Enable SFTP (with Dropbear)
+
+From your host machine, test SFTP:
+
+```bash
+sftp <username>@<target-ip>
+```
+Useful verification on target:
+```bash
+which sftp-server
+journalctl -u dropbear.socket -b --no-pager
+```
+
+### Default User Provisioning
+The image includes a first-boot user provisioning recipe:
+- `boards/rpi4/meta-rising-embedded-os/recipes-core/default-user/default-user_1.0.bb`
+
+Installed artifacts:
+- `/etc/default-user.conf`
+- `/usr/bin/default-user-setup.sh`
+- `default-user-setup.service` (enabled by default)
+
+Behavior:
+1. On first boot, `default-user-setup.service` reads `/etc/default-user.conf`.
+2. It creates the configured user and sets its password.
+3. It writes `/var/lib/default-user/configured` to avoid running again.
+
+To verify on target:
+```bash
+systemctl status default-user-setup
+journalctl -u default-user-setup -b --no-pager
+id <username>
+```
+
+To re-run provisioning manually (for testing):
+```bash
+su
+rm -rf /var/lib/default-user
+systemctl start default-user-setup
+```
+
+Credential safety note (recommended):
+keep `default-user.conf` in the repository with generic values and mark it as local-only when you add real credentials.
+
+```bash
+git update-index --skip-worktree boards/rpi4/meta-rising-embedded-os/recipes-core/default-user/files/default-user.conf
+```
+
+To track it again later:
+
+```bash
+git update-index --no-skip-worktree boards/rpi4/meta-rising-embedded-os/recipes-core/default-user/files/default-user.conf
+```
+
 ### Configuration Templates
 Located in `boards/rpi4/conf/`:
 - **Minimal build**:
