@@ -12,6 +12,7 @@ IMAGE_FEATURES += " ssh-server-dropbear "
 IMAGE_INSTALL += "\
                   linux-firmware-rpidistro-bcm43455 \
                   kernel-modules \
+                  nano \  
                   busybox \
                   busybox-udhcpc \
                   wpa-supplicant \
@@ -20,6 +21,7 @@ IMAGE_INSTALL += "\
                   iproute2 \
                   iw \
                   rfkill \
+                  network-setup \
                   "
 
 #Only produce the "rpi-sdimg" image format
