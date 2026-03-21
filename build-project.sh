@@ -39,8 +39,9 @@ EXAMPLES:
   ./build-project.sh lcbPot rising-embedded-os
 
 OUTPUT:
-  - Built images are located in: boards/BOARD/build-BOARD/tmp/deploy/images/
-  - Final SD image: boards/BOARD/BOARD-image-to-flash.sdimg
+  - Built images are located in: /home/yocto/tmp/deploy/images/BOARD/
+    - Final SD image for RPi4: /output/<image-name>-raspberrypi4-64.rpi-sdimg
+      (core-image-minimal-raspberrypi4-64 or rising-embedded-os-image-raspberrypi4-64)
 
 TROUBLESHOOTING:
   - If build fails due to resource errors, reduce BB_NUM_THREADS in local.conf
@@ -135,7 +136,8 @@ if bitbake "$BUILD_TARGET"; then
     # Copy built image to board directory
     case "$BOARD" in
         rpi4)
-            cp "/home/yocto/tmp/deploy/images/raspberrypi4-64/${BUILD_TARGET}-raspberrypi4-64.rootfs-"*.rpi-sdimg "../rpi4-image-to-flash.sdimg"
+            mkdir -p "./output"            
+            cp "/home/yocto/tmp/deploy/images/raspberrypi4-64/rising-embedded-os-image-raspberrypi4-64.rpi-sdimg" "./output/image-to-flash.rpi-sdimg"
             ;;
         lcbPot)
             # This will be developed in the future. 
@@ -146,7 +148,9 @@ if bitbake "$BUILD_TARGET"; then
             exit 1
             ;;
     esac
-    echo "Image copied to boards/$BOARD/$(basename ../$(ls ../$(echo $BOARD | sed 's/Pot/-s905x-cc/')-image-to-flash.sdimg))"
+    if [ "$BOARD" = "rpi4" ]; then
+        echo "Image copied to ./output/image-to-flash.rpi-sdimg"
+    fi
     
 else
     echo "Build failed."

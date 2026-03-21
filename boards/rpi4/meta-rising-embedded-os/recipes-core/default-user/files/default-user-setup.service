@@ -1,0 +1,13 @@
+[Unit]
+Description=Configure default local user on first boot
+After=local-fs.target
+ConditionPathExists=!/var/lib/default-user/configured
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/default-user-setup.sh
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

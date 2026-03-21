@@ -7,7 +7,7 @@ This repository documents the complete process of implementing the **Yocto Proje
 This project creates custom Linux images for multiple embedded boards using the **Yocto Project** (Scarthgap version). It showcases best practices for:
 - Containerized Yocto builds with persistent caching
 - Multi-board architecture (Raspberry Pi 4 and Libre Computer boards)
-- Custom layer development with feature-rich images
+- Custom layer development with minimal and reproducible images
 - Reproducible builds across development environments
 
 ## Objectives
@@ -117,6 +117,7 @@ bitbake core-image-minimal  # or your custom image
 ### 4. Find the Built Image
 Built images are located at:
 - **RPi4**: `/home/yocto/tmp/deploy/images/raspberrypi4-64/`
+- **Final flash image (.rpi-sdimg)**: `/output/rpi4-image-to-flash.rpi-sdimg`
 - **Libre Computer**: `boards/aml` Temptatively, the AML board is still in development, so the exact path may vary.
 
 ## Container Management
@@ -154,12 +155,12 @@ Built images are located at:
 ### Raspberry Pi 4
 - **Machine**: `raspberrypi4-64`
 - **Architecture**: ARM 64-bit (aarch64)
-- **Features**: WiFi, Bluetooth, GPIO, dual HDMI output, USB boot support
+- **Features**: WiFi, GPIO, dual HDMI output, USB boot support
 - **Documentation**: [Readme-Rpi-4.md](boards/rpi4/Readme-Rpi-4.md)
 - **Status**: 
   - [x] Minimal image with basic functionality
-  - [x] Customized image with additional features (networking, file systems, etc.) successfully built.
-  - [] Testing in the hardware not performed yet. 
+  - [x] Custom image (`rising-embedded-os-image`) successfully built.
+  - [x] Hardware testing completed on Raspberry Pi 4 (Wi-Fi + DHCPv4 working).
   
 ### Libre Computer Le Potato (AML-S905X-CC)  in development
 - **Machine**: 🔧 In development
@@ -170,15 +171,76 @@ Built images are located at:
 
 ## Custom Layer: meta-rising-embedded-os
 
-The **meta-risingembeddedmx** layer provides a production-ready embedded Linux image:
+The **meta-rising-embedded-os** layer provides a minimal embedded Linux image focused on connectivity and reproducible startup behavior.
 
 ### Included Features
-- **Remote Access**: Dropbear SSH server (lightweight alternative to OpenSSH)
-- **Network Management**: NetworkManager with command-line utilities
-- **WiFi Support**: BCM43430 firmware for Raspberry Pi 3/4 WiFi
-- **File Sharing**: NFS client/server utilities for network file systems
-- **File Synchronization**: rsync for efficient remote file transfer
-- **Filesystem Support**: NTFS-3G for read/write access to Windows filesystems
+- **Wi-Fi Support**: `wpa_supplicant` + `wpa_cli`
+- **DHCPv4 Client**: `busybox-udhcpc`
+- **Boot Automation**: `network-setup.service` for automatic Wi-Fi association and DHCP at boot
+- **Network Utilities**: `iproute2`, `iw`, `rfkill`
+
+For SSH/SFTP implementation details, see:
+- `boards/rpi4/meta-rising-embedded-os/README.md`
+
+### Automatic Wi-Fi at Boot
+The image includes a custom recipe:
+- `boards/rpi4/meta-rising-embedded-os/recipes-connectivity/network-setup/network-setup_1.0.bb`
+
+Installed artifacts:
+- `/usr/bin/network-setup.sh`
+- `network-setup.service` (enabled by default)
+
+This service runs at startup and performs:
+1. `rfkill unblock wifi`
+2. `wpa_supplicant` startup using `/etc/wpa_supplicant.conf`
+3. DHCP request via `udhcpc`
+
+To check status on target:
+```bash
+systemctl status network-setup
+journalctl -u network-setup -b --no-pager
+```
+
+### Default User Provisioning
+The image includes a first-boot user provisioning recipe:
+- `boards/rpi4/meta-rising-embedded-os/recipes-core/default-user/default-user_1.0.bb`
+
+Installed artifacts:
+- `/etc/default-user.conf`
+- `/usr/bin/default-user-setup.sh`
+- `default-user-setup.service` (enabled by default)
+
+Behavior:
+1. On first boot, `default-user-setup.service` reads `/etc/default-user.conf`.
+2. It creates the configured user and sets its password.
+3. It writes `/var/lib/default-user/configured` to avoid running again.
+
+To verify on target:
+```bash
+systemctl status default-user-setup
+journalctl -u default-user-setup -b --no-pager
+id <username>
+```
+
+To re-run provisioning manually (for testing):
+```bash
+su
+rm -rf /var/lib/default-user
+systemctl start default-user-setup
+```
+
+Credential safety note (recommended):
+keep `default-user.conf` in the repository with generic values and mark it as local-only when you add real credentials.
+
+```bash
+git update-index --skip-worktree boards/rpi4/meta-rising-embedded-os/recipes-core/default-user/files/default-user.conf
+```
+
+To track it again later:
+
+```bash
+git update-index --no-skip-worktree boards/rpi4/meta-rising-embedded-os/recipes-core/default-user/files/default-user.conf
+```
 
 ### Configuration Templates
 Located in `boards/rpi4/conf/`:
@@ -252,7 +314,7 @@ Detailed tutorials, tips & tricks, and deep-dives:
 - **Build an image**:
   ```bash
   bitbake core-image-minimal           # Minimal bootable image
-  bitbake risingembeddedmx-image       # Custom full-featured image
+  bitbake rising-embedded-os-image     # Custom image from meta-rising-embedded-os
   ```
 
 - **Clean builds**:
@@ -327,4 +389,3 @@ This project follows the licensing of its components:
 
 **Author**: [Rising Embedded MX](https://razielgdn.github.io/risingembeddedmx/about/about-en)  
 **Repository**: [rsEmb-Image](https://github.com/razielgdn/rsEmb-Image)
-  

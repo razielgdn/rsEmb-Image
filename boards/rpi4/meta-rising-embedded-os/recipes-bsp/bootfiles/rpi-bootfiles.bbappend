@@ -27,6 +27,6 @@ do_deploy:append() {
     if [ -d ${S}/overlays ]; then
         cp -r ${S}/overlays/ ${DEPLOYDIR}/${BCM2711_DIR}/
     fi
-    
+    echo 'enable_uart=1' >> ${DEPLOYDIR}/${BCM2711_DIR}/config.txt
     bbnote "BCM2711 custom deploy: Completed"
 }

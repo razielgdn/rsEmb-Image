@@ -1,0 +1,14 @@
+[Unit]
+Description=Minimal Wi-Fi setup (wpa_supplicant + udhcpc)
+After=systemd-udevd.service
+Wants=systemd-udevd.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/bin/network-setup.sh
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
