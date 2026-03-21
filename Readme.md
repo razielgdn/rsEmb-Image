@@ -174,11 +174,13 @@ Built images are located at:
 The **meta-rising-embedded-os** layer provides a minimal embedded Linux image focused on connectivity and reproducible startup behavior.
 
 ### Included Features
-- **Remote Access**: Dropbear SSH server (lightweight alternative to OpenSSH)
 - **Wi-Fi Support**: `wpa_supplicant` + `wpa_cli`
 - **DHCPv4 Client**: `busybox-udhcpc`
 - **Boot Automation**: `network-setup.service` for automatic Wi-Fi association and DHCP at boot
 - **Network Utilities**: `iproute2`, `iw`, `rfkill`
+
+For SSH/SFTP implementation details, see:
+- `boards/rpi4/meta-rising-embedded-os/README.md`
 
 ### Automatic Wi-Fi at Boot
 The image includes a custom recipe:
@@ -197,32 +199,6 @@ To check status on target:
 ```bash
 systemctl status network-setup
 journalctl -u network-setup -b --no-pager
-```
-
-### Enable SSH (Dropbear)
-Run these commands as `root` on the target board:
-
-```bash
-su
-systemctl enable --now dropbear.socket
-systemctl status dropbear.socket
-```
-Connect from PC or another device:
-```bash 
-ssh <username>@<target-ip>
-``` 
-
-### Enable SFTP (with Dropbear)
-
-From your host machine, test SFTP:
-
-```bash
-sftp <username>@<target-ip>
-```
-Useful verification on target:
-```bash
-which sftp-server
-journalctl -u dropbear.socket -b --no-pager
 ```
 
 ### Default User Provisioning
@@ -413,4 +389,3 @@ This project follows the licensing of its components:
 
 **Author**: [Rising Embedded MX](https://razielgdn.github.io/risingembeddedmx/about/about-en)  
 **Repository**: [rsEmb-Image](https://github.com/razielgdn/rsEmb-Image)
-  

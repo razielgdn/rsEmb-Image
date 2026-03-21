@@ -1,237 +1,136 @@
-# Copilot Instructions: Raspberry Pi Yocto Build Project
+# meta-rising-embedded-os
 
-## Project Overview
-This is a **Yocto/BitBake embedded Linux image builder** for Raspberry Pi 4 and Libre Computer boards. The project uses Docker for containerization and git submodules to manage Yocto layers (Poky, meta-openembedded, board-specific BSP layers).
+Custom Yocto layer for Raspberry Pi 4 focused on a minimal, reproducible image with working Wi-Fi, DHCPv4, SSH, SFTP, and first-boot user provisioning.
 
+## Layer Overview
+Current image recipe:
+- `recipes-risingembeddedmx/image/rising-embedded-os-image.bb`
 
-## Custom Distro Layer Integration (meta-risingembeddedmx)
+Main capabilities implemented in this layer:
+- Minimal networking stack (`wpa_supplicant`, `busybox-udhcpc`, `iproute2`, `iw`, `rfkill`)
+- Automatic Wi-Fi + DHCPv4 on boot (`network-setup.service`)
+- Default user provisioning at first boot (`default-user-setup.service`)
+- SSH server via Dropbear (`ssh-server-dropbear`)
+- SFTP backend via `openssh-sftp-server`
+- Rootfs postprocess to expose `sbin` binaries from `bin`
 
-### Layer Structure
-The `meta-risingembeddedmx` custom layer provides:
-- **Custom Distro**: `risingembeddedmx.conf` - Defines distro policies, package selections, and build behaviors
-- **Custom Image Recipe**: `risingembeddedmx-image.bb` - Full-featured image with additional packages
-- **Kernel Modules**: Custom kernel module recipes for hardware-specific functionality
-- **Custom Applications**: Application recipes (examples: hello-world, system utilities)
-- **BSP Customization**: Board-specific bootfiles, device tree overlays, etc.
-
-### Directory Structure
+## Directory Highlights
 ```
-boards/rpi4/meta-risingembeddedmx/
+meta-rising-embedded-os/
 ├── conf/
-│   ├── layer.conf                          # Layer metadata & compatibility
+│   ├── layer.conf
 │   └── distro/
-│       └── risingembeddedmx.conf          # Custom distro configuration
-├── recipes-kernel/
-│   ├── kconf/
-│   │   ├── linux-raspberrypi%.bbappend    # Kernel config modifications
+│       └── rising-embedded-os.conf
+├── recipes-connectivity/
+│   ├── network-setup/
+│   │   ├── network-setup_1.0.bb
 │   │   └── files/
-│   │       └── fragment.cfg                # Kernel defconfig fragment
-│   └── test-module/
-│       ├── re-test-module_1.0.bb          # Custom kernel module
+│   │       ├── network-setup.sh
+│   │       └── network-setup.service
+│   └── wpa-supplicant/
+│       ├── wpa-supplicant_%.bbappend
 │       └── files/
-│           ├── Makefile
-│           └── testmodule.c
-├── recipes-risingembeddedmx/
-│   ├── custom-application/
-│   │   ├── re-custom-application_1.0.bb   # Custom app recipe
-│   │   └── files/
-│   │       ├── hello.c
-│   │       └── Makefile
-│   └── image/
-│       └── risingembeddedmx-image.bb      # Full custom image
-├── recipes-bsp/
-│   └── bootfiles/
-│       └── bcm2835-bootfiles.bbappend     # RPi bootloader customization
-└── README.md                               # Layer documentation
+│           └── wpa_supplicant.conf
+├── recipes-core/
+│   └── default-user/
+│       ├── default-user_1.0.bb
+│       └── files/
+│           ├── default-user.conf
+│           ├── default-user-setup.sh
+│           └── default-user-setup.service
+└── recipes-risingembeddedmx/
+    └── image/
+        └── rising-embedded-os-image.bb
 ```
 
-### Layer Registration
-
-**1. Add to `bblayers.conf`** (after BSP layers, before distro selection):
-```bash
-# filepath: boards/rpi4/conf/bblayers.conf
-BBLAYERS ?= " \
-  /home/yocto/workspace/boards/rpi4/poky/meta \
-  /home/yocto/workspace/boards/rpi4/poky/meta-poky \
-  /home/yocto/workspace/boards/rpi4/poky/meta-yocto-bsp \
-  /home/yocto/workspace/boards/rpi4/meta-openembedded/meta-oe \
-  /home/yocto/workspace/boards/rpi4/meta-openembedded/meta-python \
-  /home/yocto/workspace/boards/rpi4/meta-raspberrypi \
-  /home/yocto/workspace/boards/rpi4/meta-risingembeddedmx \
-  "
-```
-
-**2. Select distro in `local.conf`**:
-```bash
-# filepath: boards/rpi4/conf/local.conf
-# Custom distro selection
-DISTRO = "risingembeddedmx"
-```
-
-### Building with Custom Distro
+## Build Workflow
+Inside container:
 
 ```bash
-# Inside container
 cd /home/yocto/workspace
 source boards/rpi4/poky/oe-init-build-env boards/rpi4/build-rpi4
-
-# Fetch sources
-bitbake --runall fetch risingembeddedmx-image
-
-# Build custom image
-bitbake risingembeddedmx-image
+bitbake rising-embedded-os-image
 ```
 
-**Output location**: `boards/rpi4/build-rpi4/tmp/deploy/images/raspberrypi4-64/`
+Output location:
+- `boards/rpi4/build-rpi4/tmp/deploy/images/raspberrypi4-64/`
 
-### Layer Configuration (layer.conf)
+## Runtime Services
+### 1. Auto Wi-Fi and DHCPv4
+Provisioned by:
+- `network-setup.service`
 
-```
-# filepath: boards/rpi4/meta-risingembeddedmx/conf/layer.conf
-BBPATH .= ":${LAYERDIR}"
-
-BBFILES += "${LAYERDIR}/recipes-*/*/*.bb"
-BBFILES += "${LAYERDIR}/recipes-*/*/*.bbappend"
-
-BBFILE_COLLECTIONS += "risingembeddedmx"
-BBFILE_PATTERN_risingembeddedmx = "^${LAYERDIR}/"
-BBFILE_PRIORITY_risingembeddedmx = "10"
-
-LAYERDEPENDS_risingembeddedmx = "core openembedded-layer raspberrypi"
-LAYERSERIES_COMPAT_risingembeddedmx = "scarthgap nanbield mickledore langdale kirkstone honister gatesgarth dunfell"
-```
-
-### Distro Configuration (risingembeddedmx.conf)
-
-```
-# filepath: boards/rpi4/meta-risingembeddedmx/conf/distro/risingembeddedmx.conf
-require conf/distro/poky.conf
-
-DISTRO = "risingembeddedmx"
-DISTRO_NAME = "Rising Embedded MX"
-DISTRO_VERSION = "1.0"
-MAINTAINER = "Your Name <email@example.com>"
-
-# Inherit from Poky and extend
-DISTRO_FEATURES_append = " systemd"
-IMAGE_FEATURES_append = " ssh-server-openssh"
-
-# Package management preferences
-PREFERRED_PROVIDER_virtual/kernel = "linux-raspberrypi"
-PREFERRED_VERSION_linux-raspberrypi = "6.1%"
-
-# Custom distro policies
-TCLIBCVERSION = "12.3"
-```
-
-### Custom Image Recipe (risingembeddedmx-image.bb)
-
-```
-# filepath: boards/rpi4/meta-risingembeddedmx/recipes-risingembeddedmx/image/risingembeddedmx-image.bb
-require recipes-core/images/core-image-minimal.bb
-
-DESCRIPTION = "Rising Embedded MX - Custom distribution for Raspberry Pi"
-IMAGE_FEATURES += " ssh-server-openssh dev-pkgs"
-
-IMAGE_INSTALL += " \
-    re-custom-application \
-    re-test-module \
-    vim \
-    htop \
-    git \
-    curl \
-    "
-```
-
-## Critical Developer Workflows
-
-### Container Setup & Build
+Check status:
 ```bash
-# Start container
-docker compose up -d
-
-# Initialize build for a board (inside container)
-./init-environment.sh rpi4           # Sources oe-init-build-env
-source boards/rpi4/poky/oe-init-build-env ../build-rpi4
-
-# Pre-fetch sources (optional but recommended for first build)
-bitbake --runall fetch risingembeddedmx-image
-
-# Build the custom image
-bitbake risingembeddedmx-image
+systemctl status network-setup
+journalctl -u network-setup -b --no-pager
 ```
 
-**Key convention**: Build happens from `boards/{board}/build-{board}/`, not workspace root.
+### 2. SSH (Dropbear)
+Dropbear is installed through:
+- `IMAGE_FEATURES += " ssh-server-dropbear "`
 
-### Output Artifacts
-- **RPi4 (Custom)**: `/boards/rpi4/build-rpi4/tmp/deploy/images/raspberrypi4-64/risingembeddedmx-image-*.rootfs.*`
-- **RPi4 (Minimal)**: `/boards/rpi4/build-rpi4/tmp/deploy/images/raspberrypi4-64/core-image-minimal-*.rootfs.*`
+Enable on running image (as root):
+```bash
+systemctl enable --now dropbear.socket
+systemctl status dropbear.socket
+```
 
-## Project-Specific Conventions
+Connect from host:
+```bash
+ssh <username>@<target-ip>
+```
 
-### Configuration Management
-- **`local.conf`**: Machine selection (`MACHINE ?= "raspberrypi4-64"`), parallelism settings (`BB_NUM_THREADS`, `PARALLEL_MAKE`), disk monitoring, **distro selection** (`DISTRO`)
-- **`bblayers.conf`**: Layer ordering (critical for recipe precedence):
-  - Poky base layers first (`meta`, `meta-poky`, `meta-yocto-bsp`)
-  - Third-party layers (`meta-openembedded`, BSP layers)
-  - Custom layers last (`meta-risingembeddedmx`)
-  - Paths use **absolute container paths** (`/home/yocto/workspace/...`)
+### 3. SFTP
+SFTP is provided by:
+- `openssh-sftp-server`
 
-### Layer Dependencies (RPi4 with Custom Distro)
-1. `poky/meta` - OE-Core
-2. `poky/meta-poky` - Poky distro
-3. `meta-openembedded/meta-oe` - Extra recipes
-4. `meta-raspberrypi` - RPi-specific BSP
-5. `meta-risingembeddedmx` - Custom distro & images (depends on above)
+Test from host:
+```bash
+sftp <username>@<target-ip>
+```
 
-### Docker Integration Details
-- **Working directory**: `/home/yocto/workspace` (mounted from repo root)
-- **Build output persisted to**: Docker volumes (`yocto-downloads`, `yocto-sstate`, `yocto-build`)
-- **Board selection**: Container env var `BOARD=${BOARD:-rpi4}` (defaults to rpi4)
+Verify on target:
+```bash
+which sftp-server
+journalctl -u dropbear.socket -b --no-pager
+```
 
-## Common Issues & Patterns
+### 4. Default User Provisioning
+Provisioned by:
+- `default-user-setup.service`
+- config file: `/etc/default-user.conf`
 
-### Recipe Not Found Errors
-- **Cause**: Layer not in `bblayers.conf` or listed after dependent layers
-- **Fix**: Verify layer path is absolute from container perspective (`/home/yocto/workspace/...`)
-- **Debug**: Run `bitbake-layers show-layers` to verify layer registration
+Check status:
+```bash
+systemctl status default-user-setup
+journalctl -u default-user-setup -b --no-pager
+id <username>
+```
 
-### Distro Not Found
-- **Cause**: `DISTRO = "risingembeddedmx"` in `local.conf` but layer not registered
-- **Fix**: Ensure `meta-risingembeddedmx` is in `bblayers.conf` **before** build initialization
+Re-run for testing:
+```bash
+su
+rm -rf /var/lib/default-user
+systemctl start default-user-setup
+```
 
-### Image Build Failures
-- **Common**: Missing dependencies in custom image recipe
-- **Fix**: Check `IMAGE_INSTALL` references valid recipe names (use `bitbake -s` to list all recipes)
+## Credential Safety
+Keep generic values in versioned config files and use local overrides.
 
-### Disk Space Monitoring
-`local.conf` contains `BB_DISKMON_DIRS` - ensures minimum free space. If builds fail with cryptic errors, check `/tmp` and build partition (BitBake reports exact failures).
+Recommended for local-only credentials:
+```bash
+git update-index --skip-worktree boards/rpi4/meta-rising-embedded-os/recipes-core/default-user/files/default-user.conf
+git update-index --skip-worktree boards/rpi4/meta-rising-embedded-os/recipes-connectivity/wpa-supplicant/files/wpa_supplicant.conf
+```
 
-### Parallel Build Tuning
-Current settings: `BB_NUM_THREADS ?= "12"`, `PARALLEL_MAKE ?= "-j 12"` - adjust based on container resource limits.
+To track them again:
+```bash
+git update-index --no-skip-worktree boards/rpi4/meta-rising-embedded-os/recipes-core/default-user/files/default-user.conf
+git update-index --no-skip-worktree boards/rpi4/meta-rising-embedded-os/recipes-connectivity/wpa-supplicant/files/wpa_supplicant.conf
+```
 
-### Shared State Cache
-- **sstate** (~20GB) persists across builds and speeds subsequent builds by 5-10x
-- Located in Docker volume `yocto-sstate`
-- Safe to wipe if rebuilding from scratch
-
-## File References
-- [boards/rpi4/conf/local.conf](../../boards/rpi4/conf/local.conf) - Machine & distro config
-- [boards/rpi4/conf/bblayers.conf](../../boards/rpi4/conf/bblayers.conf) - Layer configuration
-- [boards/rpi4/meta-risingembeddedmx/](../../boards/rpi4/meta-risingembeddedmx/) - Custom distro layer
-
-
-## When to Modify What
-
-| Issue | File to Check |
-|-------|---|
-| Add/remove layers | `boards/{board}/conf/bblayers.conf` |
-| Change distro | `boards/{board}/conf/local.conf` (`DISTRO` variable) |
-| Add distro policies | `boards/{board}/meta-risingembeddedmx/conf/distro/risingembeddedmx.conf` |
-| Add packages to custom image | `boards/{board}/meta-risingembeddedmx/recipes-risingembeddedmx/image/risingembeddedmx-image.bb` |
-| Create new recipe | Add `.bb` file to appropriate `recipes-*` subdirectory |
-| Modify kernel config | Edit `meta-risingembeddedmx/recipes-kernel/kconf/files/fragment.cfg` |
-| Change kernel, image features | `boards/{board}/conf/local.conf` |
-| Add new board | Create `boards/{new-board}/` with Poky submodule + layer submodules |
-| Container dependencies | `Dockerfile` (rebuild with `docker compose build --no-cache`) |
-| Build parallelism / caching | `local.conf` (BB_NUM_THREADS, SSTATE settings) |
+## Notes
+- This layer currently targets a minimal system footprint.
+- `ifconfig` is not included by default; use `ip` commands.
+- Build and flash cycles are expected during service tuning.
